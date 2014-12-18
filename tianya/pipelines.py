@@ -43,7 +43,7 @@ class MongoDBPipeline(object):
                     'post_time_utc' : item['post_time_utc'],
                     'click'         : item['click'],
                     'reply'         : item['reply'],
-                    'posts'         : item['posts']
+                    'posts'         : item['posts'] # this is a list of dict, not scrapy.Item
                 })
             else:
                 posts = cur['posts']
@@ -57,7 +57,7 @@ class MongoDBPipeline(object):
         except Exception, e:
             print '*'*20
             print traceback.format_exc()
-            print item['posts']
+            # print item['posts']
             print '*'*20
             raise e
 

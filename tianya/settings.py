@@ -19,4 +19,4 @@ USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36
 ITEM_PIPELINES = {
 	'tianya.pipelines.MongoDBPipeline': 1000
 }
-# LOG_LEVEL = 'WARNING'
+# LOG_LEVEL = 'INFO'
