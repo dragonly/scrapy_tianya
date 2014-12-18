@@ -46,7 +46,7 @@ class TianyaspiderSpider(CrawlSpider):
             print 'time_str: %s' % repr(time_str)
             raise e
 
-    def _extract_links(self, response):
+    def _extract_links_generator(self, response):
         lists_links = [l for l in self.lists_link_extractor.extract_links(response)]
         for link in lists_links:
             yield Request(url=link.url, callback=self.parse_list)
@@ -59,16 +59,17 @@ class TianyaspiderSpider(CrawlSpider):
 
     def parse_list(self, response):
 
-        time.sleep(random.random())
+        #time.sleep(random.random())
 
         self.log('Parsing list page %s|%s'
             % (string.strip(response.meta.get('link_text', '')), response.url), level=log.INFO)
 
-        self._extract_links(response)
+        for link in self._extract_links_generator(response):
+            yield link
 
     def parse_post(self, response):
 
-        time.sleep(random.random())
+        #time.sleep(random.random())
 
         self.log('Parsing post page %s|%s'
             % (string.strip(response.meta.get('link_text', '')), response.url), level=log.INFO)
@@ -126,7 +127,8 @@ class TianyaspiderSpider(CrawlSpider):
             # from scrapy.shell import inspect_response
             # inspect_response(response)
 
-        self._extract_links(response)
+        for link in self._extract_links_generator(response):
+            yield link
 
-        return posts
+        yield posts
 
