@@ -21,19 +21,8 @@ class MongoDBPipeline(object):
         self.collections['posts'] = self.db['posts']
         self.collections['users'] = self.db['users']
 
-    # def _fix_sn(self, posts, offset):
-    #     def _fix(post, offset):
-    #         post['sn'] = post['sn'] + offset
-    #         return post
-    #     offsets = [offset for i in posts]
-    #     posts = map(_fix, posts, offsets)
-    #     return posts
-
     def _save_to_db(self, item, collection):
         try:
-            # print repr(item['posts'])
-            # _id = item['title']
-
             # need to set title as index
             cur = collection.find_one({'title': _id})
             if cur == None:
@@ -51,9 +40,6 @@ class MongoDBPipeline(object):
             # posts exists
             else:
                 posts = cur['posts']
-                # posts_count = len(posts)
-                # posts_to_save = item['posts']
-                # posts_to_save = self._fix_sn(posts_to_save, posts_count)
 
                 # must ensure posts contains no generated data, thus mongodb update operation
                 # can filter duplicated posts already crawled
@@ -68,7 +54,6 @@ class MongoDBPipeline(object):
         except Exception, e:
             print '*'*20
             print traceback.format_exc()
-            # print item['posts']
             print '*'*20
             raise e
 

@@ -99,7 +99,6 @@ class TianyaspiderSpider(CrawlSpider):
                 # because it inherits from scrapy.Item, which is a customed class, thus
                 # cannot be bson encoded
                 post = {} # TianyaPostItem()
-                # post['sn'] = i
                 post['content'] = ''.join(sel_i.xpath('.//*[contains(@class, "bbs-content")]/text()').extract()).replace('\t', '')
 
                 post['post_time_utc'] = string.strip(''.join(sel_i.xpath('.//*[@class="atl-info"]/span[2]/text()').extract()).split(unicode('：'))[-1])
@@ -117,10 +116,8 @@ class TianyaspiderSpider(CrawlSpider):
                 self.log('Exception while parsing posts\n%s\n%s' % (e, traceback.format_exc()))
                 post['user'] = posts['user']
                 # print traceback.format_exc()
-                # print 'post: %s' % post
             finally:
                 posts['posts'].append(post)
-            # self.log(json.dumps(dict(post), ensure_ascii=False))
             # from scrapy.shell import inspect_response
             # inspect_response(response)
 
