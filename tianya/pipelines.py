@@ -45,7 +45,7 @@ class MongoDBPipeline(object):
                     # must ensure posts contains no generated data, thus mongodb update operation
                     # can filter duplicated posts already crawled
                     collection.update(
-                        {'_id': str(cur.count())},
+                        {'_id': str(collection.count())},
                         {'$addToSet': {'posts': {'$each': item['posts']}, 'urls': item['urls']},
                         # update click & reply info
                          'click': item['click'],
