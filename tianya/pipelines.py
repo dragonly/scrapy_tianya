@@ -21,22 +21,24 @@ class MongoDBPipeline(object):
         self.collections['posts'] = self.db['posts']
         self.collections['users'] = self.db['users']
 
-    def _fix_sn(self, posts, offset):
-        def _fix(post, offset):
-            post['sn'] = post['sn'] + offset
-            return post
-        offsets = [offset for i in posts]
-        posts = map(_fix, posts, offsets)
-        return posts
+    # def _fix_sn(self, posts, offset):
+    #     def _fix(post, offset):
+    #         post['sn'] = post['sn'] + offset
+    #         return post
+    #     offsets = [offset for i in posts]
+    #     posts = map(_fix, posts, offsets)
+    #     return posts
 
     def _save_to_db(self, item, collection):
         try:
             # print repr(item['posts'])
-            _id = item['title']
-            cur = collection.find_one({'_id': _id})
+            # _id = item['title']
+
+            # need to set title as index
+            cur = collection.find_one({'title': _id})
             if cur == None:
                 collection.insert({
-                    '_id'           : _id,
+                    '_id'           : '0',
                     'title'         : _id,
                     'urls'          : [item['urls']],
                     'user'          : item['user'],
@@ -45,14 +47,23 @@ class MongoDBPipeline(object):
                     'reply'         : item['reply'],
                     'posts'         : item['posts'] # this is a list of dict, not scrapy.Item
                 })
+
+            # posts exists
             else:
                 posts = cur['posts']
-                posts_count = len(posts)
-                posts_to_save = item['posts']
-                posts_to_save = self._fix_sn(posts_to_save, posts_count)
+                # posts_count = len(posts)
+                # posts_to_save = item['posts']
+                # posts_to_save = self._fix_sn(posts_to_save, posts_count)
+
+                # must ensure posts contains no generated data, thus mongodb update operation
+                # can filter duplicated posts already crawled
                 collection.update(
-                    {'_id': _id},
-                    {'$addToSet': {'posts': {'$each': posts_to_save}, 'urls': item['urls']}}
+                    {'_id': str(cur.count())},
+                    {'$addToSet': {'posts': {'$each': item['posts']}, 'urls': item['urls']},
+                    # update click & reply info
+                     'click': item['click'],
+                     'reply': item['reply']
+                    }
                 )
         except Exception, e:
             print '*'*20

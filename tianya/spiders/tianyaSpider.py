@@ -40,7 +40,7 @@ class TianyaspiderSpider(CrawlSpider):
             args = [int(i) for i in args]
             utc_timestamp = (datetime(*args) - datetime(1970, 1, 1)).total_seconds()
             # self.log('utc_timestamp: %s' % int(utc_timestamp))
-            return int(utc_timestamp)
+            return utc_timestamp
         except Exception, e:
             print 'time_str: %s' % repr(time_str)
             raise e
@@ -99,7 +99,7 @@ class TianyaspiderSpider(CrawlSpider):
                 # because it inherits from scrapy.Item, which is a customed class, thus
                 # cannot be bson encoded
                 post = {} # TianyaPostItem()
-                post['sn'] = i
+                # post['sn'] = i
                 post['content'] = ''.join(sel_i.xpath('.//*[contains(@class, "bbs-content")]/text()').extract()).replace('\t', '')
 
                 post['post_time_utc'] = string.strip(''.join(sel_i.xpath('.//*[@class="atl-info"]/span[2]/text()').extract()).split(unicode('：'))[-1])
@@ -110,14 +110,12 @@ class TianyaspiderSpider(CrawlSpider):
                 user = {}
                 user['uid'] = ''.join(sel_i.xpath('.//*[@class="atl-info"]/span[1]/a/@uid').extract())
                 user['uname'] = ''.join(sel_i.xpath('.//*[@class="atl-info"]/span[1]/a/@uname').extract())
+                if user['uid'] == '' or user['uname'] == '':
+                    raise Exception('No user info extracted!')
                 post['user'] = user
             except Exception, e:
                 self.log('Exception while parsing posts\n%s\n%s' % (e, traceback.format_exc()))
-                user = {
-                    'uid': posts['user']['uid'],
-                    'uname': posts['user']['uname']
-                }
-                post['user'] = user
+                post['user'] = posts['user']
                 # print traceback.format_exc()
                 # print 'post: %s' % post
             finally:

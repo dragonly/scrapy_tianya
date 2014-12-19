@@ -8,7 +8,7 @@
 from scrapy import Item, Field
 
 class TianyaPostItem(Item):
-    sn              = Field()
+    # sn              = Field()
     user            = Field()
     post_time_utc   = Field()
     content         = Field()
