@@ -3,7 +3,7 @@ from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.http import Request
 from scrapy.selector import Selector
-from tianya.items import TianyaPostItem, TianyaPostsItem
+from tianya.items import TianyaUserItem, TianyaPostsItem
 
 import random
 import time
@@ -118,6 +118,11 @@ class TianyaspiderSpider(CrawlSpider):
                 # print traceback.format_exc()
             finally:
                 posts['posts'].append(post)
+                
+                userItem = TianyaUserItem()
+                userItem['uid'] = post['user']['uid']
+                userItem['uname'] = post['user']['uname']
+                yield userItem
             # from scrapy.shell import inspect_response
             # inspect_response(response)
 

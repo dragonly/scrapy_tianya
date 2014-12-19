@@ -23,6 +23,6 @@ class TianyaPostsItem(Item):
     reply           = Field()
     posts           = Field()
 
-class TianyaUser(Item):
+class TianyaUserItem(Item):
     uid             = Field()
     uname           = Field()
