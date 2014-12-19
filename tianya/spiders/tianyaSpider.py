@@ -13,6 +13,7 @@ import json
 import sys
 import traceback
 import copy
+import re
 from datetime import datetime
 
 reload(sys)
@@ -55,24 +56,26 @@ class TianyaspiderSpider(CrawlSpider):
         for link in posts_links:
             yield Request(url=link.url, callback=self.parse_post)
 
-        self.log('Extracting links:\nlists_links: %s\nposts_links: %s' % (lists_links, posts_links), level=log.INFO)
+        #self.log('Extracting links:\nlists_links: %s\nposts_links: %s' % (lists_links, posts_links), level=log.INFO)
 
     def parse_list(self, response):
 
+        if response.url.startswith('http://groups.tianya.cn') or response.url.startswith('https://groups.tianya.cn'):
+            return
         #time.sleep(random.random())
 
+        sel = Selector(response)
         self.log('Parsing list page %s|%s'
-            % (string.strip(response.meta.get('link_text', '')), response.url), level=log.INFO)
+            % (string.rjust(''.join(sel.xpath('//*[@id="main"]/div[@class="headlines"]//div[@class="text"]/strong/text()').extract()), 6), response.url), level=log.INFO)
 
         for link in self._extract_links_generator(response):
             yield link
 
     def parse_post(self, response):
 
+        if response.url.startswith('http://groups.tianya.cn') or response.url.startswith('https://groups.tianya.cn'):
+            return
         #time.sleep(random.random())
-
-        self.log('Parsing post page %s|%s'
-            % (string.strip(response.meta.get('link_text', '')), response.url), level=log.INFO)
 
         # from scrapy.shell import inspect_response
         # inspect_response(response)
@@ -81,8 +84,13 @@ class TianyaspiderSpider(CrawlSpider):
         posts = TianyaPostsItem()
 
         posts['urls'] = response.url
-        posts['title'] = ''.join(sel.xpath('//*[@id="post_head"]/h1/span[1]/span/text()').extract())
+        posts['title'] = ''.join(sel.xpath('//*[@id="post_head"]/*[@class="atl-title"]/span[1]//text()').extract())
+        if posts['title'] == '':
+            with open('issues', 'at') as fd:
+                fd.write(response.url + '\n')
+
         posts['post_time_utc'] = string.strip(''.join(sel.xpath('//*[@id="post_head"]/div[1]/div[2]/span[2]/text()').extract()).split(unicode('：'))[-1])
+        post_time = posts['post_time_utc']
         posts['post_time_utc'] = self._parse_time(posts['post_time_utc'])
         posts['click'] = string.strip(''.join(sel.xpath('//*[@id="post_head"]/div[1]/div[2]/span[3]/text()').extract()).split(unicode('：'))[-1])
         posts['reply'] = string.strip(''.join(sel.xpath('//*[@id="post_head"]/div[1]/div[2]/span[4]/text()').extract()).split(unicode('：'))[-1])
@@ -93,6 +101,16 @@ class TianyaspiderSpider(CrawlSpider):
         posts['user'] = user
         posts['posts'] = []
 
+        # hack to print title prettier
+#        padding = 40 - len(post['title'].decode('utf8')) * 2
+        title = posts['title'].decode('utf8')
+        padding = 80 - len(title)
+        padding += len(title.split(' ')) - 1
+        padding += len(re.findall('[0-9a-zA-Z~!@#$%^&*()_+=\|\[\]{},<.>/\?\\\-]', title))
+        
+        self.log('Parsing post page %s | %sKB |%s| %s'
+            % (string.rjust(title, padding), len(response.body)/1024, post_time, response.url), level=log.INFO)
+
         sel_posts = sel.xpath('//*[contains(@class, "atl-main")]/*[contains(@class, "atl-item")]')
         for i, sel_i in enumerate(sel_posts):
             try:
@@ -100,7 +118,7 @@ class TianyaspiderSpider(CrawlSpider):
                 # because it inherits from scrapy.Item, which is a customed class, thus
                 # cannot be bson encoded
                 post = {} # TianyaPostItem()
-                post['content'] = ''.join(sel_i.xpath('.//*[contains(@class, "bbs-content")]/text()').extract()).replace('\t', '')
+                post['content'] = ''.join(sel_i.xpath('.//*[contains(@class, "bbs-content")]//text()').extract()).replace('\t', '')
 
                 post['post_time_utc'] = string.strip(''.join(sel_i.xpath('.//*[@class="atl-info"]/span[2]/text()').extract()).split(unicode('：'))[-1])
                 if post['post_time_utc'] != '':
@@ -119,7 +137,12 @@ class TianyaspiderSpider(CrawlSpider):
                 # print traceback.format_exc()
             finally:
                 posts['posts'].append(post)
-                self.log(json.dumps(post, ensure_ascii=False), level=log.INFO)
+                post_dump = {
+                    'time': str(datetime.utcfromtimestamp(post['post_time_utc'])),
+                    'user': post['user']['uname'],
+                    'content': post['content'],
+                        }
+                #self.log(json.dumps(post_dump, ensure_ascii=False), level=log.INFO)
             # from scrapy.shell import inspect_response
             # inspect_response(response)
 

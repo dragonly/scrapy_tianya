@@ -42,16 +42,25 @@ class MongoDBPipeline(object):
                 else:
                     # must ensure posts contains no generated data, thus mongodb update operation
                     # can filter duplicated posts already crawled
-                    collection.update(
-                        {'title': item['title']},
-                        {'$addToSet': {'posts': {'$each': item['posts']}, 'urls': item['urls']},
-                        # update click & reply info
-                         '$set': {
-                            'click': item['click'],
-                            'reply': item['reply']
-                         }
-                        }
-                    )
+                    if item['urls'] in cur['urls']:
+                        collection.update(
+                            {'title': item['title']},
+                            {'$set': {
+                                'click': item['click'],
+                                'reply': item['reply']
+                            }}
+                        )
+                    else:
+                        collection.update(
+                            {'title': item['title']},
+                            {'$addToSet': {'posts': {'$each': item['posts']}, 'urls': item['urls']},
+                            # update click & reply info
+                             '$set': {
+                                'click': item['click'],
+                                'reply': item['reply']
+                             }
+                            }
+                        )
             elif isinstance(item, TianyaUserItem):
                 collection.insert({
                     '_id': item['uid'],
@@ -66,6 +75,7 @@ class MongoDBPipeline(object):
     def process_item(self, item, spider):
 
         if isinstance(item, TianyaPostsItem):
+            item['urls'] = item['urls'].split('?')[0]
             self._save_to_db(item, self.collections['posts'])
         elif isinstance(item, TianyaUserItem):
             self._save_to_db(item, self.collections['users'])
