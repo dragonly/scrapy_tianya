@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from scrapy import log
 from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.http import Request
@@ -54,14 +55,14 @@ class TianyaspiderSpider(CrawlSpider):
         for link in posts_links:
             yield Request(url=link.url, callback=self.parse_post)
 
-        self.log('Extracting links:\nlists_links: %s\nposts_links: %s' % (lists_links, posts_links))
+        self.log('Extracting links:\nlists_links: %s\nposts_links: %s' % (lists_links, posts_links), level=log.INFO)
 
     def parse_list(self, response):
 
         time.sleep(random.random())
 
         self.log('Parsing list page %s|%s'
-            % (string.strip(response.meta.get('link_text', '')), response.url))
+            % (string.strip(response.meta.get('link_text', '')), response.url), level=log.INFO)
 
         for link in self._extract_links_generator(response):
             yield link
@@ -71,7 +72,7 @@ class TianyaspiderSpider(CrawlSpider):
         time.sleep(random.random())
 
         self.log('Parsing post page %s|%s'
-            % (string.strip(response.meta.get('link_text', '')), response.url))
+            % (string.strip(response.meta.get('link_text', '')), response.url), level=log.INFO)
 
         # from scrapy.shell import inspect_response
         # inspect_response(response)
@@ -118,6 +119,7 @@ class TianyaspiderSpider(CrawlSpider):
                 # print traceback.format_exc()
             finally:
                 posts['posts'].append(post)
+                self.log(json.dumps(post, ensure_ascii=False), level=log.INFO)
             # from scrapy.shell import inspect_response
             # inspect_response(response)
 

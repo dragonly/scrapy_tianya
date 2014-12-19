@@ -28,7 +28,7 @@ class MongoDBPipeline(object):
                 cur = collection.find_one({'title': item['title']})
                 if cur == None:
                     collection.insert({
-                        '_id'           : '0',
+                        '_id'           : str(collection.count()),
                         'title'         : item['title'],
                         'urls'          : [item['urls']],
                         'user'          : item['user'],
@@ -40,12 +40,10 @@ class MongoDBPipeline(object):
 
                 # posts exists
                 else:
-                    posts = cur['posts']
-
                     # must ensure posts contains no generated data, thus mongodb update operation
                     # can filter duplicated posts already crawled
                     collection.update(
-                        {'_id': str(collection.count())},
+                        {'title': item['title']},
                         {'$addToSet': {'posts': {'$each': item['posts']}, 'urls': item['urls']},
                         # update click & reply info
                          '$set': {
