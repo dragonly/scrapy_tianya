@@ -4,7 +4,7 @@ from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.http import Request
 from scrapy.selector import Selector
-from tianya.items import TianyaPostItem, TianyaPostsItem
+from tianya.items import TianyaUserItem, TianyaPostsItem
 
 import random
 import time
@@ -41,7 +41,7 @@ class TianyaspiderSpider(CrawlSpider):
             args = [int(i) for i in args]
             utc_timestamp = (datetime(*args) - datetime(1970, 1, 1)).total_seconds()
             # self.log('utc_timestamp: %s' % int(utc_timestamp))
-            return int(utc_timestamp)
+            return utc_timestamp
         except Exception, e:
             print 'time_str: %s' % repr(time_str)
             raise e
@@ -100,7 +100,6 @@ class TianyaspiderSpider(CrawlSpider):
                 # because it inherits from scrapy.Item, which is a customed class, thus
                 # cannot be bson encoded
                 post = {} # TianyaPostItem()
-                post['sn'] = i
                 post['content'] = ''.join(sel_i.xpath('.//*[contains(@class, "bbs-content")]/text()').extract()).replace('\t', '')
 
                 post['post_time_utc'] = string.strip(''.join(sel_i.xpath('.//*[@class="atl-info"]/span[2]/text()').extract()).split(unicode('：'))[-1])
@@ -111,19 +110,20 @@ class TianyaspiderSpider(CrawlSpider):
                 user = {}
                 user['uid'] = ''.join(sel_i.xpath('.//*[@class="atl-info"]/span[1]/a/@uid').extract())
                 user['uname'] = ''.join(sel_i.xpath('.//*[@class="atl-info"]/span[1]/a/@uname').extract())
+                if user['uid'] == '' or user['uname'] == '':
+                    raise Exception('No user info extracted!')
                 post['user'] = user
             except Exception, e:
                 self.log('Exception while parsing posts\n%s\n%s' % (e, traceback.format_exc()))
-                user = {
-                    'uid': posts['user']['uid'],
-                    'uname': posts['user']['uname']
-                }
-                post['user'] = user
+                post['user'] = posts['user']
                 # print traceback.format_exc()
-                # print 'post: %s' % post
             finally:
                 posts['posts'].append(post)
-            self.log(json.dumps(post, ensure_ascii=False), level=log.INFO)
+                
+                userItem = TianyaUserItem()
+                userItem['uid'] = post['user']['uid']
+                userItem['uname'] = post['user']['uname']
+                yield userItem
             # from scrapy.shell import inspect_response
             # inspect_response(response)
 
