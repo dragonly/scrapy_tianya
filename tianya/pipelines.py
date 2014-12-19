@@ -9,7 +9,7 @@ import pymongo
 import scrapy
 import traceback
 import json
-from tianya.items import TianyaPostsItem
+from tianya.items import TianyaPostsItem, TianyaUserItem
 
 class MongoDBPipeline(object):
 
@@ -23,34 +23,40 @@ class MongoDBPipeline(object):
 
     def _save_to_db(self, item, collection):
         try:
-            # need to set title as index
-            cur = collection.find_one({'title': _id})
-            if cur == None:
+            if isinstance(item, TianyaPostsItem):
+                # need to set title as index
+                cur = collection.find_one({'title': item['title']})
+                if cur == None:
+                    collection.insert({
+                        '_id'           : '0',
+                        'title'         : item['title'],
+                        'urls'          : [item['urls']],
+                        'user'          : item['user'],
+                        'post_time_utc' : item['post_time_utc'],
+                        'click'         : item['click'],
+                        'reply'         : item['reply'],
+                        'posts'         : item['posts'] # this is a list of dict, not scrapy.Item
+                    })
+
+                # posts exists
+                else:
+                    posts = cur['posts']
+
+                    # must ensure posts contains no generated data, thus mongodb update operation
+                    # can filter duplicated posts already crawled
+                    collection.update(
+                        {'_id': str(cur.count())},
+                        {'$addToSet': {'posts': {'$each': item['posts']}, 'urls': item['urls']},
+                        # update click & reply info
+                         'click': item['click'],
+                         'reply': item['reply']
+                        }
+                    )
+            elif isinstance(item, TianyaUserItem):
                 collection.insert({
-                    '_id'           : '0',
-                    'title'         : _id,
-                    'urls'          : [item['urls']],
-                    'user'          : item['user'],
-                    'post_time_utc' : item['post_time_utc'],
-                    'click'         : item['click'],
-                    'reply'         : item['reply'],
-                    'posts'         : item['posts'] # this is a list of dict, not scrapy.Item
+                    '_id': item['uid'],
+                    'uname': item['uname']
                 })
-
-            # posts exists
-            else:
-                posts = cur['posts']
-
-                # must ensure posts contains no generated data, thus mongodb update operation
-                # can filter duplicated posts already crawled
-                collection.update(
-                    {'_id': str(cur.count())},
-                    {'$addToSet': {'posts': {'$each': item['posts']}, 'urls': item['urls']},
-                    # update click & reply info
-                     'click': item['click'],
-                     'reply': item['reply']
-                    }
-                )
         except Exception, e:
             print '*'*20
             print traceback.format_exc()
@@ -61,6 +67,8 @@ class MongoDBPipeline(object):
 
         if isinstance(item, TianyaPostsItem):
             self._save_to_db(item, self.collections['posts'])
+        elif isinstance(item, TianyaUserItem):
+            self._save_to_db(item, self.collections['user'])
 
         return item
 
