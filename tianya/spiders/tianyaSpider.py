@@ -118,16 +118,18 @@ class TianyaspiderSpider(CrawlSpider):
                 # print traceback.format_exc()
             finally:
                 posts['posts'].append(post)
-                
-                userItem = TianyaUserItem()
-                userItem['uid'] = post['user']['uid']
-                userItem['uname'] = post['user']['uname']
-                yield userItem
             # from scrapy.shell import inspect_response
             # inspect_response(response)
+
+        yield posts
+
+        for post in posts['posts']:
+            userItem = TianyaUserItem()
+            userItem['uid'] = post['user']['uid']
+            userItem['uname'] = post['user']['uname']
+            yield userItem
 
         for link in self._extract_links_generator(response):
             yield link
 
-        yield posts
 

@@ -48,8 +48,10 @@ class MongoDBPipeline(object):
                         {'_id': str(collection.count())},
                         {'$addToSet': {'posts': {'$each': item['posts']}, 'urls': item['urls']},
                         # update click & reply info
-                         'click': item['click'],
-                         'reply': item['reply']
+                         '$set': {
+                            'click': item['click'],
+                            'reply': item['reply']
+                         }
                         }
                     )
             elif isinstance(item, TianyaUserItem):
