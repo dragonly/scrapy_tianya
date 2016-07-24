@@ -8,7 +8,8 @@ A crawler for bbs.tianya.cn, using scrapy as crawler framework
 - mongodb
 - pymongo
 
-*PS: Actually you can rewrite tianya/pipelines.py to change the storage backend, instead of mongodb :)*
+PS: Actually you can rewrite tianya/pipelines.py to change the storage backend, instead of mongodb :)
+PPS: xpath links are easy to get in Chrome Developer Tool
 
 ### Instruction
 ```Python
