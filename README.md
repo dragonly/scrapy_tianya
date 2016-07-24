@@ -13,7 +13,7 @@ PS: Actually you can rewrite tianya/pipelines.py to change the storage backend, 
 PPS: xpath links are easy to get in Chrome Developer Tool
 
 ### Instruction
-```Python
+```bash
 cd path/to/repo
 mkdir job
 scrapy crawl tianyaSpider -s JOBDIR=/path/to/job/job-1_or_whatever
